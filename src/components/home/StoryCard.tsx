@@ -12,10 +12,10 @@ export function StoryCard({ story }: StoryCardProps) {
   return (
     <Link
       href={`/stories/${story.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-border-custom bg-surface hover:border-brand-primary/30 hover:shadow-xl hover:shadow-black/20 transition-all duration-300 h-full"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-border-custom bg-surface hover:border-accent-blood-red/40 hover:-translate-y-1.5 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-accent-blood-red/5 h-full"
     >
       {/* Cover Image Container */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-background">
+      <div className="relative aspect-[2/3] w-full overflow-hidden bg-background border-b border-border-custom">
         {story.cover_url ? (
           <img
             src={story.cover_url}
@@ -35,10 +35,10 @@ export function StoryCard({ story }: StoryCardProps) {
 
         {/* Badges Overlay */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-black/75 text-brand-primary border border-brand-primary/20 backdrop-blur-sm">
+          <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-background/90 backdrop-blur-sm text-brand-primary border border-border-custom rounded-md">
             {story.status}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-black/75 text-text-primary border border-border-custom backdrop-blur-sm">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-background/90 backdrop-blur-sm text-text-primary border border-border-custom rounded-md">
             {story.read_mode === 'vertical' ? (
               <>
                 <Compass className="w-2.5 h-2.5 text-brand-primary" />
@@ -55,8 +55,8 @@ export function StoryCard({ story }: StoryCardProps) {
       </div>
 
       {/* Info details */}
-      <div className="flex flex-col flex-1 p-5">
-        <h3 className="text-h4 text-brand-primary group-hover:text-brand-dark transition-colors duration-200 line-clamp-1 mb-1.5">
+      <div className="flex flex-col flex-1 p-4 bg-surface">
+        <h3 className="text-h3 text-brand-primary group-hover:text-accent-blood-red transition-colors duration-200 line-clamp-2 mb-1.5 leading-snug">
           {story.title}
         </h3>
         
@@ -72,7 +72,7 @@ export function StoryCard({ story }: StoryCardProps) {
             {story.genre_tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center text-[11px] text-text-muted px-2 py-0.5 rounded bg-background border border-border-custom"
+                className="inline-flex items-center text-[10px] font-medium uppercase tracking-wider text-text-secondary px-2 py-0.5 bg-background border border-border-custom rounded-md"
               >
                 {tag}
               </span>

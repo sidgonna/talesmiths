@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { MOCK_STORIES, MOCK_EPISODES, MOCK_PANELS } from '@/lib/mockData';
 import { Story, Episode, Panel } from '@/types';
 
 const isServer = typeof window === 'undefined';
@@ -21,13 +20,13 @@ export async function getStories(): Promise<Story[]> {
       .select('*')
       .order('display_order', { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      return MOCK_STORIES;
+    if (error || !data) {
+      return [];
     }
     return data as Story[];
   } catch (err) {
     console.error('Error fetching stories:', err);
-    return MOCK_STORIES;
+    return [];
   }
 }
 
@@ -41,12 +40,12 @@ export async function getStoryBySlug(slug: string): Promise<Story | null> {
       .maybeSingle();
 
     if (error || !data) {
-      return MOCK_STORIES.find((s) => s.slug === slug) ?? null;
+      return null;
     }
     return data as Story;
   } catch (err) {
     console.error('Error fetching story by slug:', err);
-    return MOCK_STORIES.find((s) => s.slug === slug) ?? null;
+    return null;
   }
 }
 
@@ -59,16 +58,13 @@ export async function getEpisodes(storyId: string): Promise<Episode[]> {
       .eq('story_id', storyId)
       .order('episode_number', { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      // Fallback matching logic (either by UUID storyId or slug mapping)
-      const mockStory = MOCK_STORIES.find(s => s.id === storyId || s.slug === storyId);
-      return mockStory ? (MOCK_EPISODES[mockStory.id] ?? []) : [];
+    if (error || !data) {
+      return [];
     }
     return data as Episode[];
   } catch (err) {
     console.error('Error fetching episodes:', err);
-    const mockStory = MOCK_STORIES.find(s => s.id === storyId || s.slug === storyId);
-    return mockStory ? (MOCK_EPISODES[mockStory.id] ?? []) : [];
+    return [];
   }
 }
 
@@ -83,16 +79,12 @@ export async function getEpisodeBySlug(storyId: string, slug: string): Promise<E
       .maybeSingle();
 
     if (error || !data) {
-      const mockStory = MOCK_STORIES.find(s => s.id === storyId || s.slug === storyId);
-      if (!mockStory) return null;
-      return MOCK_EPISODES[mockStory.id]?.find((e) => e.slug === slug) ?? null;
+      return null;
     }
     return data as Episode;
   } catch (err) {
     console.error('Error fetching episode by slug:', err);
-    const mockStory = MOCK_STORIES.find(s => s.id === storyId || s.slug === storyId);
-    if (!mockStory) return null;
-    return MOCK_EPISODES[mockStory.id]?.find((e) => e.slug === slug) ?? null;
+    return null;
   }
 }
 
@@ -105,12 +97,12 @@ export async function getPanels(episodeId: string): Promise<Panel[]> {
       .eq('episode_id', episodeId)
       .order('display_order', { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      return MOCK_PANELS[episodeId] ?? [];
+    if (error || !data) {
+      return [];
     }
     return data as Panel[];
   } catch (err) {
     console.error('Error fetching panels:', err);
-    return MOCK_PANELS[episodeId] ?? [];
+    return [];
   }
 }

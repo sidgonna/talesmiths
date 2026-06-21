@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/components/providers/SupabaseProvider';
-import { useTheme } from '@/components/providers/ThemeProvider';
 import { User, BookOpen, Bookmark, Settings, Flame, Compass, Eye, LogOut, Check } from 'lucide-react';
 import type { Profile, Story, Episode, EpisodeRead } from '@/types';
 
@@ -15,7 +14,6 @@ interface ExtendedRead extends EpisodeRead {
 export function ProfileView() {
   const router = useRouter();
   const supabase = useSupabase();
-  const { theme, setTheme } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -28,6 +26,69 @@ export function ProfileView() {
   const [defaultMode, setDefaultMode] = useState<'vertical' | 'horizontal'>('vertical');
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!profile) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const max_size = 96; // Tiny but recognizable avatar size
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > max_size) {
+              height *= max_size / width;
+              width = max_size;
+            }
+          } else {
+            if (height > max_size) {
+              width *= max_size / height;
+              height = max_size;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Compress to JPEG with 0.5 quality (approx. 4-8KB size)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+
+            const { error } = await supabase
+              .from('profiles')
+              .update({ avatar_url: compressedBase64 })
+              .eq('id', profile.id);
+
+            if (!error) {
+              setProfile((prev) => prev ? { ...prev, avatar_url: compressedBase64 } : null);
+            } else {
+              alert('Failed to update avatar: ' + error.message);
+            }
+          }
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Error compressing avatar:', err);
+      alert('Failed to upload avatar.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -115,8 +176,7 @@ export function ProfileView() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    window.location.href = '/';
   };
 
   const computeReadingStats = () => {
@@ -152,8 +212,30 @@ export function ProfileView() {
       {/* Profile Overview Card */}
       <div className="p-6 rounded-2xl border border-border-custom bg-surface flex flex-col md:flex-row items-center justify-between gap-6 mb-8 shadow-xl">
         <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
-          <div className="w-16 h-16 rounded-full bg-radial-gradient from-brand-primary/20 to-border-custom flex items-center justify-center border-2 border-brand-primary text-brand-primary font-bebas text-h2 uppercase">
-            {profile.username.substring(0, 2)}
+          <div className="w-16 h-16 rounded-full border-2 border-brand-primary bg-background overflow-hidden flex items-center justify-center select-none relative group shrink-0 shadow-lg shadow-black/10">
+            {profile.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profile.avatar_url}
+                alt={profile.username}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="font-bebas text-h2 text-brand-primary uppercase">
+                {profile.username.substring(0, 2)}
+              </span>
+            )}
+            
+            <label className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-brand-primary font-bold uppercase cursor-pointer transition-all duration-200 select-none">
+              {uploadingAvatar ? '...' : 'Upload'}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                disabled={uploadingAvatar}
+              />
+            </label>
           </div>
           <div>
             <div className="flex items-center gap-2 justify-center md:justify-start">
@@ -387,21 +469,7 @@ export function ProfileView() {
                 />
               </div>
 
-              {/* Theme Settings */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-bold text-text-secondary uppercase tracking-wide">
-                  Theme Engine
-                </label>
-                <select
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value as any)}
-                  className="w-full max-w-md px-4 py-2.5 rounded-lg border border-border-custom bg-background text-text-primary focus:outline-none focus:border-brand-primary transition-colors text-small"
-                >
-                  <option value="system">System Default</option>
-                  <option value="light">Light Parchment</option>
-                  <option value="dark">Coal Dark</option>
-                </select>
-              </div>
+
 
               {/* Default format preferences */}
               <div className="flex flex-col gap-1.5">

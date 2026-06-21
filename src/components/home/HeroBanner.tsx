@@ -31,12 +31,12 @@ export function HeroBanner({ featuredStory }: HeroBannerProps) {
       {/* Content wrapper */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl flex flex-col items-start gap-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-brand-primary/20 bg-background/50 text-[10px] sm:text-caption text-brand-primary uppercase tracking-wider font-semibold backdrop-blur-sm">
-            <Sparkles className="w-3.5 h-3.5 text-brand-primary animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-background border border-border-custom text-[11px] text-accent-blood-red uppercase tracking-wider font-semibold rounded-md">
+            <Sparkles className="w-3.5 h-3.5 text-accent-blood-red animate-pulse" />
             Featured Release
           </div>
 
-          <h1 className="text-h1 text-brand-primary leading-[0.9] tracking-wider select-none uppercase break-words">
+          <h1 className="text-h1 text-brand-primary leading-tight tracking-tight select-none mt-2 break-words">
             {featuredStory.title}
           </h1>
 
@@ -52,7 +52,7 @@ export function HeroBanner({ featuredStory }: HeroBannerProps) {
               {featuredStory.genre_tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-0.5 rounded text-small text-text-muted bg-background border border-border-custom"
+                  className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-text-secondary bg-background border border-border-custom rounded-md"
                 >
                   {tag}
                 </span>
@@ -62,12 +62,12 @@ export function HeroBanner({ featuredStory }: HeroBannerProps) {
             <span className="inline-flex items-center gap-1 text-small text-text-muted">
               {featuredStory.read_mode === 'vertical' ? (
                 <>
-                  <Compass className="w-4 h-4 text-brand-primary" />
+                  <Compass className="w-4 h-4 text-accent-blood-red" />
                   Vertical Scroll
                 </>
               ) : (
                 <>
-                  <BookOpen className="w-4 h-4 text-brand-primary" />
+                  <BookOpen className="w-4 h-4 text-accent-blood-red" />
                   Horizontal Page-flip
                 </>
               )}
@@ -78,12 +78,12 @@ export function HeroBanner({ featuredStory }: HeroBannerProps) {
           <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full sm:w-auto">
             <Link
               href={`/stories/${featuredStory.slug}`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-accent-blood-red hover:bg-accent-hover-crimson text-text-primary text-small font-semibold transition-all duration-200 shadow-lg shadow-accent-blood-red/10 focus:outline-none focus:ring-2 focus:ring-accent-blood-red/50"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-accent-blood-red hover:bg-accent-hover-crimson text-text-primary text-small font-semibold tracking-wider uppercase transition-all duration-200 rounded-lg shadow-lg shadow-accent-blood-red/20 hover:-translate-y-0.5 focus:outline-none"
             >
               Start Reading
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <span className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-caption uppercase font-semibold text-brand-primary border border-brand-primary/10 rounded-lg bg-surface/50 backdrop-blur-sm select-none">
+            <span className="inline-flex items-center justify-center gap-2 px-5 py-3 text-small uppercase font-semibold tracking-wider text-text-secondary border border-border-custom bg-background rounded-lg select-none">
               {featuredStory.status}
             </span>
           </div>

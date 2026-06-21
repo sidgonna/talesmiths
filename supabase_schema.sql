@@ -366,3 +366,62 @@ create policy "Admins can view analytics events"
             where profiles.id = auth.uid() and profiles.is_admin = true
         )
     );
+
+-- ==========================================
+-- 11. DYNAMIC ENGAGEMENT TRIGGERS & RPCs
+-- ==========================================
+
+-- View count increment RPC
+create or replace function public.increment_episode_view(ep_id uuid)
+returns void as $$
+begin
+    update public.episodes
+    set view_count = view_count + 1
+    where id = ep_id;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger function to automatically increment/decrement episode like_count
+create or replace function public.handle_episode_like_change()
+returns trigger as $$
+begin
+    if (TG_OP = 'INSERT') then
+        update public.episodes
+        set like_count = like_count + 1
+        where id = new.episode_id;
+        return new;
+    elsif (TG_OP = 'DELETE') then
+        update public.episodes
+        set like_count = greatest(0, like_count - 1)
+        where id = old.episode_id;
+        return old;
+    end if;
+    return null;
+end;
+$$ language plpgsql security definer;
+
+-- Bind trigger to likes table
+drop trigger if exists on_episode_like_change on public.likes;
+create trigger on_episode_like_change
+    after insert or delete on public.likes
+    for each row execute procedure public.handle_episode_like_change();
+
+-- ==========================================
+-- 12. GRANT PERMISSIONS TO SERVICE ROLE & USERS
+-- ==========================================
+
+-- Grant schema usage to supabase standard roles
+grant usage on schema public to postgres, anon, authenticated, service_role;
+
+-- Grant permissions to service_role (used by admin API endpoints)
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
+grant all privileges on all functions in schema public to service_role;
+
+-- Grant appropriate permissions to anon and authenticated roles
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant select, insert on all tables in schema public to anon;
+grant usage, select on all sequences in schema public to authenticated, anon;
+grant execute on function public.increment_episode_view(uuid) to anon, authenticated;
+
+

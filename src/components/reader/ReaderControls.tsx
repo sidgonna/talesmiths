@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Share2, Heart, MessageSquare, X } from 'lucide-react';
 import { Episode, Story } from '@/types';
 import { useState, useEffect } from 'react';
 import { ShareModal } from '@/components/share/ShareModal';
+import { useSupabase } from '@/components/providers/SupabaseProvider';
+import { EpisodeComments } from '@/components/story/EpisodeComments';
 
 interface ReaderControlsProps {
   story: Story;
@@ -25,6 +27,61 @@ export function ReaderControls({
 }: ReaderControlsProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(currentEpisode.like_count);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const supabase = useSupabase();
+
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+      if (session) {
+        const { data } = await supabase
+          .from('likes')
+          .select('id')
+          .eq('profile_id', session.user.id)
+          .eq('episode_id', currentEpisode.id)
+          .maybeSingle();
+        setIsLiked(!!data);
+      }
+    };
+    checkLikeStatus();
+  }, [currentEpisode.id, supabase]);
+
+  const handleLike = async () => {
+    if (!isLoggedIn) {
+      alert('Please log in or sign up to like this episode!');
+      return;
+    }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    try {
+      if (isLiked) {
+        await supabase
+          .from('likes')
+          .delete()
+          .eq('profile_id', session.user.id)
+          .eq('episode_id', currentEpisode.id);
+        setIsLiked(false);
+        setLikeCount((prev) => Math.max(0, prev - 1));
+      } else {
+        await supabase
+          .from('likes')
+          .insert({
+            profile_id: session.user.id,
+            episode_id: currentEpisode.id
+          });
+        setIsLiked(true);
+        setLikeCount((prev) => prev + 1);
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+    }
+  };
 
   const sorted = [...allEpisodes].sort((a, b) => a.episode_number - b.episode_number);
   const currentIndex = sorted.findIndex((e) => e.id === currentEpisode.id);
@@ -80,6 +137,31 @@ export function ReaderControls({
 
         {/* Viewport controls */}
         <div className="flex items-center gap-3">
+          {/* Like Button */}
+          <button
+            onClick={handleLike}
+            className={`p-2 rounded-lg border transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+              isLiked 
+                ? 'bg-status-error/10 border-status-error/30 text-status-error hover:bg-status-error/20' 
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border-custom'
+            }`}
+            aria-label="Like episode"
+          >
+            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current text-status-error' : 'text-brand-primary'}`} />
+            <span className="text-[10px] font-bold select-none">{likeCount}</span>
+          </button>
+
+          {/* Comments Button */}
+          <button
+            onClick={() => setIsCommentsOpen(true)}
+            className="p-2 rounded-lg bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border border-border-custom transition-all duration-200 cursor-pointer flex items-center gap-1.5"
+            aria-label="Discussion"
+          >
+            <MessageSquare className="w-4 h-4 text-brand-primary" />
+            <span className="text-[10px] font-bold select-none">Discuss</span>
+          </button>
+
+          {/* Share Button */}
           <button
             onClick={() => setIsShareOpen(true)}
             className="p-2 rounded-lg bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border border-border-custom transition-all duration-200 cursor-pointer"
@@ -171,6 +253,41 @@ export function ReaderControls({
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
       />
+
+      {/* Sliding Comments Drawer Overlay */}
+      {isCommentsOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div 
+            onClick={() => setIsCommentsOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+          />
+          
+          {/* Drawer container */}
+          <div className="relative w-full max-w-lg bg-background border-l border-border-custom h-full flex flex-col shadow-2xl z-10 transition-transform duration-300 transform translate-x-0">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border-custom bg-surface">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-brand-primary" />
+                <h3 className="text-small font-bold uppercase tracking-wider text-text-primary">
+                  Reader Discussion
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsCommentsOpen(false)}
+                className="p-2 rounded-lg bg-background hover:bg-surface-hover border border-border-custom text-text-secondary hover:text-text-primary cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {/* Scrollable comments view */}
+            <div className="flex-1 overflow-y-auto p-4 select-text">
+              <EpisodeComments episodeId={currentEpisode.id} />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

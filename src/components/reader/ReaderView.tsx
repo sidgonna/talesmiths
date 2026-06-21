@@ -70,6 +70,19 @@ export function ReaderView({ story, currentEpisode, allEpisodes, panels }: Reade
     loadProgress();
   }, [currentEpisode.id, supabase]);
 
+  // Increment view count on load
+  useEffect(() => {
+    const incrementView = async () => {
+      try {
+        await supabase.rpc('increment_episode_view', { ep_id: currentEpisode.id });
+      } catch (err) {
+        console.error('Error incrementing view count:', err);
+      }
+    };
+    incrementView();
+  }, [currentEpisode.id, supabase]);
+
+
   // Save progress dynamically as they read
   const handleProgressChange = async (indexOrProgress: number, calculatedProgress?: number) => {
     let nextProgress = indexOrProgress;
@@ -141,7 +154,7 @@ export function ReaderView({ story, currentEpisode, allEpisodes, panels }: Reade
   }
 
   return (
-    <div className="relative flex flex-col w-full h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="relative flex flex-col w-full h-[calc(100vh-4rem)] overflow-hidden bg-black">
       {/* Floating navigation overlay header/footer */}
       <ReaderControls
         story={story}
@@ -166,6 +179,7 @@ export function ReaderView({ story, currentEpisode, allEpisodes, panels }: Reade
             panels={panels}
             onProgressChange={handleProgressChange}
             initialProgress={initialProgress}
+            episodeId={currentEpisode.id}
           />
         ) : (
           <HorizontalReader

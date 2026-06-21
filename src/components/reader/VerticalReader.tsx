@@ -2,14 +2,16 @@
 
 import { useEffect, useRef } from 'react';
 import { Panel } from '@/types';
+import { EpisodeComments } from '@/components/story/EpisodeComments';
 
 interface VerticalReaderProps {
   panels: Panel[];
   onProgressChange: (progress: number) => void;
   initialProgress: number;
+  episodeId: string;
 }
 
-export function VerticalReader({ panels, onProgressChange, initialProgress }: VerticalReaderProps) {
+export function VerticalReader({ panels, onProgressChange, initialProgress, episodeId }: VerticalReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,7 +61,13 @@ export function VerticalReader({ panels, onProgressChange, initialProgress }: Ve
             />
           </div>
         ))}
+
+        {/* Discussion Board at the bottom */}
+        <div className="w-full px-4 py-16 bg-background border-t border-border-custom/50">
+          <EpisodeComments episodeId={episodeId} />
+        </div>
       </div>
     </div>
   );
 }
+

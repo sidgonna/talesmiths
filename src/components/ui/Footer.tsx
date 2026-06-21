@@ -9,7 +9,7 @@ export function Footer() {
         {/* Brand column */}
         <div className="flex flex-col gap-3 max-w-sm">
           <div className="flex items-center gap-2">
-            <span className="text-h3 font-bebas text-brand-primary tracking-wider uppercase font-normal select-none">
+            <span className="text-h3 text-brand-primary tracking-wider uppercase font-semibold select-none">
               Tale Smiths
             </span>
           </div>
@@ -18,7 +18,7 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-3 mt-2">
             <a
-              href="https://instagram.com" // Placeholder for Instagram promotion
+              href="https://www.instagram.com/tale5miths/"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-lg bg-background hover:bg-surface-hover border border-border-custom hover:border-brand-primary/40 text-text-secondary hover:text-brand-primary transition-all duration-200"
@@ -55,9 +55,6 @@ export function Footer() {
             </Link>
             <Link href="/search" className="text-caption text-text-secondary hover:text-text-primary transition-colors">
               Search
-            </Link>
-            <Link href="/profile" className="text-caption text-text-secondary hover:text-text-primary transition-colors">
-              Reader Profile
             </Link>
           </nav>
         </div>

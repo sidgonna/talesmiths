@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSupabase } from '@/components/providers/SupabaseProvider';
 import { useAdmin } from '@/components/providers/AdminProvider';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import Image from 'next/image';
 import { User, BookOpen, Search, LogOut } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -65,13 +65,14 @@ export function Navbar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    window.location.href = '/';
   };
 
   const isActive = (path: string) => pathname === path;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border-custom bg-background/80 backdrop-blur-md transition-colors duration-200">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo / Brand Name */}
         <div className="flex items-center gap-6">
           <div 
@@ -89,14 +90,18 @@ export function Navbar() {
               onClick={(e) => {
                 if (longPressedRef.current) {
                   e.preventDefault();
-                  longPressedRef.current = false;
                 }
               }}
-              className="flex items-center gap-2"
             >
-              <span className="text-h3 font-bebas text-brand-primary tracking-wider uppercase font-normal select-none">
-                Tale Smiths
-              </span>
+              <div className="relative w-60 h-16 flex items-center justify-center cursor-pointer">
+                <Image 
+                  src="/logo-transparent.png" 
+                  alt="Tale Smiths Logo" 
+                  fill 
+                  className="object-contain" 
+                  priority 
+                />
+              </div>
             </Link>
           </div>
 
@@ -135,8 +140,6 @@ export function Navbar() {
             <Search className="w-5 h-5" />
           </Link>
 
-          <ThemeToggle />
-
           {!loading && (
             <>
               {user ? (
@@ -164,7 +167,7 @@ export function Navbar() {
                 </div>
               ) : (
                 <Link
-                  href="/login"
+                  href={`/login?next=${encodeURIComponent(pathname)}`}
                   className="px-4 py-2 text-small font-semibold rounded-lg bg-accent-blood-red hover:bg-accent-hover-crimson text-text-primary transition-all duration-200 shadow-lg shadow-accent-blood-red/10 focus:outline-none focus:ring-2 focus:ring-accent-blood-red/50"
                 >
                   Log In
