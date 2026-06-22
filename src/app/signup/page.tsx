@@ -7,21 +7,16 @@ import { useSupabase } from '@/components/providers/SupabaseProvider';
 import { syncLocalProgress } from '@/lib/supabase/sync';
 import { Navbar } from '@/components/ui/Navbar';
 import { MobileNav } from '@/components/ui/MobileNav';
-import { Sparkles, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = useSupabase();
 
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
 
   const redirectTo = searchParams.get('next') || '/profile';
 
@@ -35,53 +30,6 @@ function SignupForm() {
       }
     });
   }, [supabase, router, redirectTo]);
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg(null);
-    setLoading(true);
-
-    if (username.trim().length < 3) {
-      setErrorMsg('Username must be at least 3 characters long.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: username.trim(),
-          },
-        },
-      });
-
-      if (error) {
-        setErrorMsg(error.message);
-        setLoading(false);
-        return;
-      }
-
-      if (data.user) {
-        if (!data.session) {
-          // Supabase project requires email confirmation (default behavior)
-          setVerificationSent(true);
-          setLoading(false);
-          return;
-        }
-
-        // Email confirmation is disabled, direct login
-        await syncLocalProgress(supabase, data.user.id);
-        router.push(redirectTo);
-        router.refresh();
-      }
-    } catch (err) {
-      setErrorMsg('An unexpected error occurred. Please try again.');
-      setLoading(false);
-    }
-  };
 
   const handleGoogleSignup = async () => {
     setErrorMsg(null);
@@ -114,38 +62,6 @@ function SignupForm() {
     );
   }
 
-  if (verificationSent) {
-    return (
-      <main className="flex-1 flex items-center justify-center px-4 py-16 pb-24 md:pb-16 bg-radial-gradient from-surface-hover/10 via-transparent to-transparent">
-        <div className="w-full max-w-md p-8 rounded-2xl border border-border-custom bg-surface shadow-2xl text-center flex flex-col items-center gap-5">
-          <div className="w-16 h-16 rounded-full bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary">
-            <Mail className="w-8 h-8" />
-          </div>
-          <h1 className="text-h2 text-brand-primary uppercase tracking-wider">
-            Confirm Email
-          </h1>
-          <p className="text-small text-text-secondary leading-relaxed">
-            We have sent a verification link to <strong className="text-text-primary">{email}</strong>. Please check your inbox and click the link to activate your account.
-          </p>
-          <div className="w-full p-4 rounded-lg bg-surface-hover border border-border-custom text-left text-[11px] text-text-muted leading-relaxed">
-            <p className="font-bold text-text-secondary mb-1">Didn't receive the email?</p>
-            <ul className="list-disc pl-4 space-y-1">
-              <li>Check your <strong>Spam</strong> or Junk folder.</li>
-              <li>Wait 1-2 minutes as delivery might be slightly delayed.</li>
-              <li>Ensure the email address is spelled correctly.</li>
-            </ul>
-          </div>
-          <Link
-            href="/login"
-            className="w-full py-3 rounded-lg bg-accent-blood-red hover:bg-accent-hover-crimson text-text-primary text-small font-bold uppercase tracking-wider transition-all duration-200 text-center cursor-pointer"
-          >
-            Go to Login
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="flex-1 flex items-center justify-center px-4 py-16 pb-24 md:pb-16 bg-radial-gradient from-surface-hover/10 via-transparent to-transparent">
       <div className="w-full max-w-md p-8 rounded-2xl border border-border-custom bg-surface shadow-2xl">
@@ -174,7 +90,7 @@ function SignupForm() {
         {/* Google OAuth Button */}
         <button
           onClick={handleGoogleSignup}
-          disabled={oauthLoading || loading}
+          disabled={oauthLoading}
           className="w-full flex items-center justify-center gap-3 py-3 rounded-lg border border-border-custom bg-background hover:bg-surface-hover transition-colors text-small font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/50 cursor-pointer disabled:opacity-50"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -197,80 +113,6 @@ function SignupForm() {
           </svg>
           {oauthLoading ? 'Initializing...' : 'Continue with Google'}
         </button>
-
-        {/* Separator */}
-        <div className="flex items-center my-6">
-          <div className="flex-1 border-t border-border-custom"></div>
-          <span className="px-3 text-caption text-text-muted uppercase tracking-wider font-semibold">
-            or continue with
-          </span>
-          <div className="flex-1 border-t border-border-custom"></div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSignup} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="username" className="text-caption font-bold text-text-secondary uppercase tracking-wide">
-              Username
-            </label>
-            <div className="relative">
-              <input
-                id="username"
-                type="text"
-                required
-                placeholder="talesmith"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-border-custom bg-background text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-primary transition-colors text-small"
-              />
-              <User className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-caption font-bold text-text-secondary uppercase tracking-wide">
-              Email Address
-            </label>
-            <div className="relative">
-              <input
-                id="email"
-                type="email"
-                required
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-border-custom bg-background text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-primary transition-colors text-small"
-              />
-              <Mail className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-caption font-bold text-text-secondary uppercase tracking-wide">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-border-custom bg-background text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-primary transition-colors text-small"
-              />
-              <Lock className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || oauthLoading}
-            className="w-full mt-2 py-3 rounded-lg bg-accent-blood-red hover:bg-accent-hover-crimson disabled:bg-surface-hover disabled:text-text-muted text-text-primary text-small font-bold uppercase tracking-wider transition-all duration-200 shadow-lg shadow-accent-blood-red/10 focus:outline-none focus:ring-2 focus:ring-accent-blood-red/50 cursor-pointer"
-          >
-            {loading ? 'Creating Account...' : 'Sign Up'}
-          </button>
-        </form>
 
         {/* Footer Link */}
         <div className="mt-8 pt-6 border-t border-border-custom/50 text-center text-small text-text-secondary">
