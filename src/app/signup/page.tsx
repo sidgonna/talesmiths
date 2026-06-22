@@ -21,6 +21,7 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const redirectTo = searchParams.get('next') || '/profile';
 
@@ -64,6 +65,14 @@ function SignupForm() {
       }
 
       if (data.user) {
+        if (!data.session) {
+          // Supabase project requires email confirmation (default behavior)
+          setVerificationSent(true);
+          setLoading(false);
+          return;
+        }
+
+        // Email confirmation is disabled, direct login
         await syncLocalProgress(supabase, data.user.id);
         router.push(redirectTo);
         router.refresh();
@@ -102,6 +111,38 @@ function SignupForm() {
           Authenticating...
         </span>
       </div>
+    );
+  }
+
+  if (verificationSent) {
+    return (
+      <main className="flex-1 flex items-center justify-center px-4 py-16 pb-24 md:pb-16 bg-radial-gradient from-surface-hover/10 via-transparent to-transparent">
+        <div className="w-full max-w-md p-8 rounded-2xl border border-border-custom bg-surface shadow-2xl text-center flex flex-col items-center gap-5">
+          <div className="w-16 h-16 rounded-full bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary">
+            <Mail className="w-8 h-8" />
+          </div>
+          <h1 className="text-h2 text-brand-primary uppercase tracking-wider">
+            Confirm Email
+          </h1>
+          <p className="text-small text-text-secondary leading-relaxed">
+            We have sent a verification link to <strong className="text-text-primary">{email}</strong>. Please check your inbox and click the link to activate your account.
+          </p>
+          <div className="w-full p-4 rounded-lg bg-surface-hover border border-border-custom text-left text-[11px] text-text-muted leading-relaxed">
+            <p className="font-bold text-text-secondary mb-1">Didn't receive the email?</p>
+            <ul className="list-disc pl-4 space-y-1">
+              <li>Check your <strong>Spam</strong> or Junk folder.</li>
+              <li>Wait 1-2 minutes as delivery might be slightly delayed.</li>
+              <li>Ensure the email address is spelled correctly.</li>
+            </ul>
+          </div>
+          <Link
+            href="/login"
+            className="w-full py-3 rounded-lg bg-accent-blood-red hover:bg-accent-hover-crimson text-text-primary text-small font-bold uppercase tracking-wider transition-all duration-200 text-center cursor-pointer"
+          >
+            Go to Login
+          </Link>
+        </div>
+      </main>
     );
   }
 
