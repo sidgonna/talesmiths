@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Epilogue, Inter } from "next/font/google";
+import { Bebas_Neue, Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import { AdminProvider } from "@/components/providers/AdminProvider";
 import { AdminOverlay } from "@/components/admin/AdminOverlay";
 
-const epilogue = Epilogue({
-  variable: "--font-epilogue",
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  variable: "--font-bebas-neue",
   subsets: ["latin"],
 });
 
@@ -29,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${epilogue.variable} ${inter.variable} h-full antialiased`}
+      className={`${bebasNeue.variable} ${inter.variable} h-full antialiased`}
       data-theme="dark"
       suppressHydrationWarning
     >
