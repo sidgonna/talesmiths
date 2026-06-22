@@ -10,7 +10,7 @@ interface ShareCardProps {
 }
 
 export function ShareCard({ story, episode, cardRef }: ShareCardProps) {
-  const coverUrl = story.cover_url || '/images/mahakala_cover.png';
+  const coverUrl = story.cover_url || '';
   const displayTitle = episode 
     ? (episode.title ? `Ep ${episode.episode_number}: ${episode.title}` : `Episode ${episode.episode_number}`)
     : story.title;

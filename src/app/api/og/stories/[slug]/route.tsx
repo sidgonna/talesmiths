@@ -41,23 +41,13 @@ export async function GET(
 
     // Fallback if Supabase is offline or not seeded
     if (!story) {
-      if (slug === 'mahakala') {
-        story = {
-          title: 'MAHAKALA',
-          description: 'Somewhere far from our universe, in a world forgotten by time where Gods once walked...',
-          cover_url: `${request.nextUrl.origin}/images/mahakala_cover.png`,
-          genre_tags: ['Fantasy', 'Action', 'Mythology'],
-          status: 'ongoing',
-        };
-      } else {
-        story = {
-          title: slug.toUpperCase(),
-          description: 'Explore this original AI-generated manga series on Tale Smiths.',
-          cover_url: null,
-          genre_tags: ['Manga', 'Comics'],
-          status: 'ongoing',
-        };
-      }
+      story = {
+        title: slug.toUpperCase().replace(/-/g, ' '),
+        description: 'Explore this original AI-generated manga series on Tale Smiths.',
+        cover_url: null,
+        genre_tags: ['Manga', 'Comics'],
+        status: 'ongoing',
+      };
     }
 
     const title = story.title || 'Tale Smiths';

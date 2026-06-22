@@ -62,11 +62,11 @@ export async function GET(
     if (!episode || !story) {
       episode = {
         episode_number: 1,
-        title: 'The Destroyed Temple',
+        title: 'New Release',
       };
       story = {
-        title: 'MAHAKALA',
-        cover_url: `${request.nextUrl.origin}/images/mahakala_cover.png`,
+        title: 'Tale Smiths Story',
+        cover_url: null,
       };
     }
 
