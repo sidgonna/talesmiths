@@ -96,7 +96,7 @@ export function HorizontalReader({ panels, direction, onProgressChange, initialP
       {/* Immersive page image area */}
       <div 
         onClick={handleScreenClick}
-        className="flex-1 w-full flex items-center justify-center p-4 cursor-pointer relative"
+        className="flex-1 h-0 w-full flex items-center justify-center p-4 cursor-pointer relative"
       >
         {activePanel ? (
           <img
