@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/admin';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { deleteFromR2 } from '@/lib/r2/upload';
 
 // 1. GET: Fetch all episodes for a story, including nested panels
 export async function GET(request: Request) {
@@ -194,7 +195,15 @@ export async function PUT(request: Request) {
 
     // 3. Update Panels (Delete old ones, insert new ones to support order changes cleanly)
     if (panels && Array.isArray(panels)) {
-      // Delete existing
+      // Fetch existing panel keys before deleting them
+      const { data: existingPanels, error: fetchPanelsError } = await supabase
+        .from('panels')
+        .select('r2_key')
+        .eq('episode_id', id);
+
+      if (fetchPanelsError) throw fetchPanelsError;
+
+      // Delete existing records from the database
       const { error: deleteError } = await supabase
         .from('panels')
         .delete()
@@ -218,6 +227,24 @@ export async function PUT(request: Request) {
           .insert(panelsToInsert);
 
         if (panelError) throw panelError;
+      }
+
+      // Clean up physical panel objects in Cloudflare R2 that are no longer part of this episode
+      if (existingPanels && existingPanels.length > 0) {
+        const newKeys = new Set(panels.map((p: any) => p.r2_key).filter(Boolean));
+        const keysToDelete = existingPanels
+          .map((p) => p.r2_key)
+          .filter((k) => k && !newKeys.has(k));
+
+        if (keysToDelete.length > 0) {
+          for (const key of keysToDelete) {
+            try {
+              await deleteFromR2(key);
+            } catch (r2Error) {
+              console.error(`Failed to clean up orphaned panel "${key}" from R2:`, r2Error);
+            }
+          }
+        }
       }
     }
 
@@ -247,12 +274,36 @@ export async function DELETE(request: Request) {
     }
 
     const supabase = createAdminClient();
-    const { error } = await supabase
+
+    // 1. Fetch the episode's panels first to get their R2 storage keys
+    const { data: panels, error: fetchError } = await supabase
+      .from('panels')
+      .select('r2_key')
+      .eq('episode_id', id);
+
+    if (fetchError) throw fetchError;
+
+    // 2. Delete the episode from Supabase (cascades DB deletions to the panels table)
+    const { error: deleteError } = await supabase
       .from('episodes')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (deleteError) throw deleteError;
+
+    // 3. Delete the associated physical panel images from Cloudflare R2
+    if (panels && panels.length > 0) {
+      for (const panel of panels) {
+        if (panel.r2_key) {
+          try {
+            await deleteFromR2(panel.r2_key);
+          } catch (r2Error) {
+            console.error(`Failed to delete panel object "${panel.r2_key}" from R2:`, r2Error);
+          }
+        }
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete episode error:', error);

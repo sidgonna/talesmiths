@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/admin';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { deleteFolderFromR2 } from '@/lib/r2/upload';
 
 // 1. GET: Fetch all stories (including drafts / order control)
 export async function GET() {
@@ -158,12 +159,33 @@ export async function DELETE(request: Request) {
     }
 
     const supabase = createAdminClient();
-    const { error } = await supabase
-      .from('stories')
-      .delete()
-      .eq('id', id);
 
-    if (error) throw error;
+    // 1. Fetch the story first to obtain its slug
+    const { data: story, error: fetchError } = await supabase
+      .from('stories')
+      .select('slug')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    if (story) {
+      // 2. Delete the story from Supabase (triggers cascade deletions of episodes and panels in PostgreSQL)
+      const { error: deleteError } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Clean up all stored media objects associated with this story in Cloudflare R2
+      try {
+        await deleteFolderFromR2(`stories/${story.slug}/`);
+      } catch (r2Error) {
+        console.error(`Failed to delete R2 media directory for story "${story.slug}":`, r2Error);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete story error:', error);
