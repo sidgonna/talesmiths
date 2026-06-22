@@ -46,7 +46,7 @@ export function VerticalReader({ panels, onProgressChange, initialProgress, epis
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto overflow-x-hidden w-full h-[calc(100vh-4rem)] bg-background select-none scroll-smooth flex flex-col items-center"
+      className="flex-1 overflow-y-auto overflow-x-hidden w-full h-full bg-background select-none scroll-smooth flex flex-col items-center"
     >
       <div className="w-full max-w-2xl flex flex-col items-center">
         {panels.map((panel) => (

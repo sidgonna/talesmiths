@@ -91,7 +91,7 @@ export function HorizontalReader({ panels, direction, onProgressChange, initialP
   return (
     <div 
       {...swipeHandlers}
-      className="flex-1 flex flex-col items-center justify-center bg-background select-none h-[calc(100vh-4rem)] w-full relative touch-none"
+      className="flex-1 flex flex-col items-center justify-center bg-background select-none h-full w-full relative touch-none"
     >
       {/* Immersive page image area */}
       <div 

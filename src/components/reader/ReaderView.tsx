@@ -154,7 +154,7 @@ export function ReaderView({ story, currentEpisode, allEpisodes, panels }: Reade
   }
 
   return (
-    <div className="relative flex flex-col w-full h-[calc(100vh-4rem)] overflow-hidden bg-black">
+    <div className="relative flex flex-col w-full h-screen h-[100dvh] overflow-hidden bg-black">
       {/* Floating navigation overlay header/footer */}
       <ReaderControls
         story={story}
@@ -173,7 +173,7 @@ export function ReaderView({ story, currentEpisode, allEpisodes, panels }: Reade
         if (x > width * 0.4 && x < width * 0.6) {
           toggleControls();
         }
-      }} className="flex-1 flex flex-col">
+      }} className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
         {resolvedMode === 'vertical' ? (
           <VerticalReader
             panels={panels}
