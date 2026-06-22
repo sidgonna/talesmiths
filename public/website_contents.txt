@@ -1,0 +1,67 @@
+TALE SMITHS - WEBSITE CONTENT DESCRIPTION & SITE ARCHITECTURE
+
+======================================================================
+ACTIVE URLS (SITEMAP)
+======================================================================
+- Home Page: https://talesmiths.indevs.in/
+- Stories Directory: https://talesmiths.indevs.in/stories
+- Search: https://talesmiths.indevs.in/search
+- User Profile: https://talesmiths.indevs.in/profile
+- Login: https://talesmiths.indevs.in/login
+- Signup: https://talesmiths.indevs.in/signup
+
+======================================================================
+PART 1: READER VIEW CONTENTS & METADATA
+======================================================================
+
+1. HOME SCREEN (/)
+   - Brand Logo & Header: Displayed at the top of the viewport inside a sticky h-20 header, showcasing the newly adjusted, highly visible transparent Tale-Smiths logo (w-60 h-16).
+   - "Featured Release" Hero Banner:
+     - Heading: "Featured Release" (accompanied by an animated sparkle icon).
+     - Content: Showcases the current creator-featured story dynamically pulled from the Supabase database (marked by the 'is_featured' flag). Includes the story title (styled in premium typography), full synopsis/description, genre tags, read-mode indicator (vertical/horizontal), and a prominent crimson-rose "Start Reading" CTA button.
+     - Background: Full-width cover art background of the featured story with a soft 15% opacity blur and gradients for reading legibility.
+   - "Our Collection" Section:
+     - Heading: "Our Collection".
+     - Content: Displays the dynamic grid directory of all published manga series and webcomics.
+     - Series Cards: Includes high-resolution cover layouts, status badges (Ongoing/Completed), read-mode layout indicators (Page/Scroll), titles, tags, summaries, and a "Read ->" click trigger.
+
+2. STORIES DIRECTORY (/stories)
+   - Heading: "All Manga Series".
+   - Content: A fully searchable directory with an interactive Genre Filter panel (All, Action, Fantasy, Mythology, Sci-Fi, Mystery).
+   - Interactive Elements: Genre buttons dynamically filter cards in real-time. Displays a custom compass-icon illustration if no results are found.
+
+3. SEARCH PAGE (/search)
+   - Heading: "Search Stories".
+   - Content: Text input field that performs fuzzy matching query searches against story titles and summaries.
+
+4. USER PROFILE PAGE (/profile)
+   - Heading: "Reader Profile".
+   - Content: Contains bookmarked series shortcuts, default layout configuration selectors (Vertical/Horizontal preference), and custom avatar uploader tools that compress images for quick loading.
+
+5. EPISODE READER VIEW (/stories/[slug]/[episode])
+   - Theme: forced absolute pitch-black canvas (bg-black) for zero glare.
+   - Vertical Webtoon Layout: Seamless long-strip image scrolling.
+   - Horizontal Manga Layout: Responsive page-flip layout engine.
+   - Reader Overlay Features: Floating chapter selector, real-time views tracker, bookmark triggers, like buttons, and a threaded user comments section at the bottom.
+
+======================================================================
+PART 2: ADMIN / CREATOR VIEW CONTENTS
+======================================================================
+
+1. ENTRY & MANAGEMENT GATEWAY (/admin-gate)
+   - Hidden authentication console allowing creators with 'is_admin = true' in profiles metadata to bypass reader modes.
+   - Launches a global floating drawer controller for rapid editing accessibility on any route.
+
+2. CREATOR DASHBOARD CONTROLS
+   - Stories Management:
+     - Create, update, or archive series.
+     - Select reading mode direction (Left-to-Right vs Right-to-Left).
+     - Upload custom cover graphics and set featured priority commands.
+   - Episodes & Content Management:
+     - Publish or schedule chapter releases.
+     - Drag-and-drop panel upload system that pushes comic page assets directly to Cloudflare R2 / AWS S3 cloud storage.
+     - Track panel dimensions and configure layout display order indexes.
+   - Analytics Dashboard:
+     - Aggregated live tracking tables for total reads, likes count, and top-performing episodes.
+   - Comment Moderation Board:
+     - Real-time comment board monitor allowing moderators to delete, flag, or reinstate user comment threads.
