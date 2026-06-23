@@ -1,0 +1,192 @@
+========================================================================
+                      TALE SMITHS - PRODUCT SPECIFICATION
+========================================================================
+This document summarizes the core concept, current feature set, technical
+architecture, screen layouts, user routing, and serverless infrastructure
+of the Tale Smiths manga and webcomic web application.
+
+------------------------------------------------------------------------
+1. CORE APP IDEA & VALUE PROPOSITION
+------------------------------------------------------------------------
+Tale Smiths is a premium, high-performance web application designed for
+publishing and reading webcomics and manga. It bridges the gap between
+gritty, immersive comic aesthetics and modern, high-speed web reader engines.
+
+The platform has a dual-faceted role:
+- For Readers: Provides a distraction-free, zero-glare reader supporting
+  both vertical strip scrolling (webtoon style) and horizontal page-flipping
+  (manga style), with bookmarks, likes, and comment sections.
+- For Creators/Admins: Provides a secure, code-free administrative dashboard
+  for managing series, publishing or scheduling episodes, drag-and-drop panel
+  uploads directly to cloud storage, comment moderation, and analytics.
+
+------------------------------------------------------------------------
+2. CORE WEB APP FEATURES (HOW THEY WORK)
+------------------------------------------------------------------------
+
+* Unified Reader Viewport
+  - Supports two view layouts dynamically determined by user preference or
+    story defaults:
+    1. Vertical Scroll: Seamless image-strip layout, optimal for Webtoons.
+    2. Horizontal Swipe: Dual-direction page flipping (Left-to-Right and
+       Right-to-Left), optimal for traditional Manga.
+  - Performance: Leverages Next.js image loading and CSS flexbox containment
+    to prevent viewport height overflows on diverse screens (laptops, mobile).
+
+* Google OAuth-Only Authentication
+  - Credentials-based login and email/password signups are fully disabled
+    to prevent failure due to unreliable email verification delivery.
+  - The login (/login) and signup (/signup) pages feature a clean, minimal
+    "Continue with Google" single-button authentication interface.
+  - Profile Creation: First-time signups automatically trigger a Supabase
+    database function (`public.handle_new_user()`) that provisions a profile
+    row in the `profiles` table using the metadata returned by Google OAuth.
+
+* Live Reading Progress & Bookmarking
+  - Local state progress (scroll position % and current page number) is
+    frequently synchronized database-side to the `episode_reads` table.
+  - This allows readers to leave a chapter mid-way and resume reading from
+    any other device exactly where they left off.
+  - Bookmarked series are saved in the `story_bookmarks` table and are quickly
+    accessible on the user's dashboard.
+
+* Engagement & Community Threads
+  - Likes: Users can like chapters. A database trigger (`on_episode_like_change`)
+    automatically increments or decrements the total count on the `episodes` table.
+  - Comment System: Supports nested, hierarchical threaded comments under episodes.
+  - Newsletter Subscription: A public subscription input that maps to the
+    `email_subscribers` table for updates.
+
+* Administrative Dashboard Console
+  - Accessible to users flagged as `is_admin = true` via `/admin-gate`.
+  - Content Creator features include:
+    - Series Manager: Create, update, or archive stories (titles, tags, cover art).
+    - Episode Publisher: Create chapters, manage status (Draft, Published, Scheduled),
+      and upload panels.
+    - Drag-and-Drop Panel Uploader: Uploads comic panels directly to Cloudflare R2
+      via an API gateway that handles folder structures, panel indexing, and
+      aspect ratios.
+    - Comment Moderation: Track and moderate user comment threads.
+    - Basic Analytics: Track view count, like count, and subscriber statistics.
+
+* Dynamic Social Sharing (Open Graph Engine)
+  - Next.js Edge functions dynamically generate metadata and high-fidelity OG image
+    assets for individual stories and episodes, ensuring rich cards when links
+    are shared on Discord, Twitter, or message boards.
+
+------------------------------------------------------------------------
+3. FRONTEND SCREENS & USER FLOWS
+------------------------------------------------------------------------
+
+The current web app consists of the following screens:
+
+1. HOME SCREEN (/)
+   - Content: Features a large "Featured Release" banner showcasing a dynamic
+     story (defined by the `is_featured` database flag) with a synopsis and a
+     "Start Reading" CTA. Below this is a grid section called "Our Collection"
+     displaying all available series cards.
+   - Design: Premium dark layout with high-contrast elements.
+
+2. STORIES DIRECTORY (/stories)
+   - Content: Lists all active stories. Includes interactive buttons for
+     genre filters (All, Action, Fantasy, Mythology, Sci-Fi, Mystery) that
+     dynamically display matching series.
+
+3. SEARCH PAGE (/search)
+   - Content: A simple search input performing fuzzy matches against titles
+     and description text.
+
+4. LOGIN SCREEN (/login)
+   - Content: A clean, card-based login layout featuring a single "Continue with
+     Google" OAuth button. Includes a link to signup.
+
+5. SIGNUP SCREEN (/signup)
+   - Content: Similar to login, features a minimal "Continue with Google" sign-up
+     card. All inputs for email, password, and usernames have been removed.
+
+6. PROFILE DASHBOARD (/profile)
+   - Content: Displays the user's details, reading history progress cards, default
+     reader layout preferences (Vertical vs Horizontal), and bookmark list.
+
+7. STORY DETAIL SCREEN (/stories/[slug])
+   - Content: Displays full story synopsis, genre tags, status badges, and a
+     chronological list of published episodes.
+
+8. EPISODE READER VIEW (/stories/[slug]/[episode])
+   - Content: Immersive black-canvas comic viewer. Hosts horizontal/vertical
+     rendering systems, a floating chapter navigator overlay, likes counter,
+     bookmark triggers, and the comments feed.
+
+9. ADMIN GATEWAY (/admin-gate)
+   - Content: Creator authentication screen. On verification of admin role, launches
+     the Creator Console dashboard overlay for managing stories and uploading panels.
+
+--- SCREEN CONNECTIONS AND NAVIGATION GRAPH ---
+
+            [Home (/)] <===================> [Stories (/stories)]
+              ||                                      ||
+              || (clicks Story Card)                  || (clicks Story Card)
+              \/                                      \/
+     [Story Detail (/stories/[slug])] <=================
+              ||
+              || (clicks Episode)
+              \/
+    [Reader (/stories/[slug]/[episode])] <===========> [Profile (/profile)]
+              || (resumes history / bookmarks)                  ^
+              ||                                                |
+              v                                                 |
+      [Login (/login)] <----------------------------------------+
+              || (first-time login triggers trigger function)
+              v
+     [Signup (/signup)]
+
+------------------------------------------------------------------------
+4. DATABASE SCHEMA REFERENCE (POSTGRESQL)
+------------------------------------------------------------------------
+The database schema consists of these main relational tables in Supabase:
+
+- `profiles` (references `auth.users`): ID, username, avatar_url, theme,
+  default_mode (vertical/horizontal), and `is_admin` boolean.
+- `stories`: ID, title, description, cover_url, genre_tags (array), status,
+  read_mode, direction (ltr/rtl), is_featured (boolean), and slug.
+- `episodes` (references `stories`): ID, story_id, title, episode_number, slug,
+  view_count, like_count, status (draft/published/scheduled).
+- `panels` (references `episodes`): ID, episode_id, r2_key, cdn_url, display_order,
+  width, height. Represents the individual page files.
+- `episode_reads` (references `profiles` & `episodes`): ID, profile_id, episode_id,
+  progress (0.0 to 1.0), current_page, and completed flag.
+- `story_bookmarks` (references `profiles` & `stories`): ID, profile_id, story_id.
+- `likes` (references `profiles` & `episodes`): ID, profile_id, episode_id.
+- `comments` (references `profiles` & `episodes`): ID, profile_id, episode_id,
+  parent_id (for replies), body text, and is_deleted.
+- `email_subscribers`: ID, email, story_ids (array), and confirmed status.
+- `analytics_events`: ID, event_type, story_id, episode_id, profile_id, referrer.
+
+------------------------------------------------------------------------
+5. SERVERLESS SERVICES & CLOUD STACK
+------------------------------------------------------------------------
+
+* Vercel (Hosting & Deployments)
+  - Serves the Next.js production build using serverless edge/lambda functions.
+  - Automatically triggers deployments on every Git push to the `main` branch.
+  - Domain Mapping: Connects Vercel routing directly to the custom subdomain
+    `talesmiths.indevs.in` with auto-renewing SSL certificates.
+
+* Supabase (Backend-as-a-Service)
+  - PostgreSQL Database: Houses all tables, relational schemas, and row-level
+    security (RLS) policies.
+  - Row Level Security (RLS): Restricts data access. Anonymous users can read
+    published episodes/stories/comments, authenticated users can write comments,
+    manage bookmarks, and update reading progress. Only users with `is_admin = true`
+    can write to `stories`, `episodes`, or `panels`.
+  - Authentication: Handles Google OAuth logins. Initiates provider handshakes and
+    triggers local profile provisioning via database trigger.
+  - RPC Functions: Handles atomic database actions such as `increment_episode_view`.
+
+* Cloudflare R2 (S3-Compatible Object Storage)
+  - Serves as the storage bucket for high-resolution comic pages and story cover graphics.
+  - Next.js API Routes (`/api/admin/upload`, `/api/admin/stories`, etc.) make use
+    of the `@aws-sdk/client-s3` credentials to generate secure pre-signed upload URLs
+    or perform direct file deletion on deletion triggers.
+  - Provides low-latency content delivery networks (CDN) for fast manga page loads.
+========================================================================
